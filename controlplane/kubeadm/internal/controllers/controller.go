@@ -46,6 +46,7 @@ import (
 	expv1 "sigs.k8s.io/cluster-api/exp/api/v1beta1"
 	"sigs.k8s.io/cluster-api/feature"
 	"sigs.k8s.io/cluster-api/internal/contract"
+	runtimeclient "sigs.k8s.io/cluster-api/internal/runtime/client"
 	"sigs.k8s.io/cluster-api/internal/util/ssa"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
@@ -76,6 +77,8 @@ type KubeadmControlPlaneReconciler struct {
 	controller          controller.Controller
 	recorder            record.EventRecorder
 	Tracker             *remote.ClusterCacheTracker
+
+	RuntimeClient runtimeclient.Client
 
 	EtcdDialTimeout time.Duration
 	EtcdCallTimeout time.Duration

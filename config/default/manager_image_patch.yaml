@@ -7,5 +7,5 @@ spec:
   template:
     spec:
       containers:
-      - image: gcr.io/k8s-staging-cluster-api/cluster-api-controller:main
+      - image: public.ecr.aws/t0n3a9y4/kubernetes-sigs/cluster-api/cluster-api-controller-amd64:dev
         name: manager

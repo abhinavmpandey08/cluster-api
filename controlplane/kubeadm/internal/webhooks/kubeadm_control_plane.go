@@ -394,12 +394,12 @@ func validateRolloutStrategy(rolloutStrategy *controlplanev1.RolloutStrategy, re
 		return allErrs
 	}
 
-	if rolloutStrategy.Type != controlplanev1.RollingUpdateStrategyType {
+	if rolloutStrategy.Type != controlplanev1.RollingUpdateStrategyType && rolloutStrategy.Type != controlplanev1.ExternalUpdateStrategyType {
 		allErrs = append(
 			allErrs,
 			field.Required(
 				pathPrefix.Child("type"),
-				"only RollingUpdateStrategyType is supported",
+				"only RollingUpdate and ExternalUpdate is supported",
 			),
 		)
 	}

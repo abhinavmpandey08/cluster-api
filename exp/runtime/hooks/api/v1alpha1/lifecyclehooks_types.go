@@ -20,7 +20,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	kcpv1beta1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimecatalog "sigs.k8s.io/cluster-api/exp/runtime/catalog"
+	"sigs.k8s.io/cluster-api/util/collections"
 )
 
 // BeforeClusterCreateRequest is the request of the BeforeClusterCreate hook.
@@ -108,6 +110,38 @@ type BeforeClusterUpgradeResponse struct {
 // BeforeClusterUpgrade is the hook that will be called after a Cluster.spec.version is upgraded and
 // before the updated version is propagated to the underlying objects.
 func BeforeClusterUpgrade(*BeforeClusterUpgradeRequest, *BeforeClusterUpgradeResponse) {}
+
+// BeforeControlPlaneUpgradeRequest is the request of the BeforeControlPlaneUpgrade hook.
+// +kubebuilder:object:root=true
+type BeforeControlPlaneUpgradeRequest struct {
+	metav1.TypeMeta `json:",inline"`
+
+	// CommonRequest contains fields common to all request types.
+	CommonRequest `json:",inline"`
+
+	// Cluster is the cluster object the lifecycle hook corresponds to.
+	Cluster *clusterv1.Cluster `json:"cluster"`
+
+	KCP *kcpv1beta1.KubeadmControlPlane `json:"kcp"`
+
+	MachinesToBeUpgraded collections.Machines `json:"machinesToBeUpgraded"`
+}
+
+// var _ RetryResponseObject = &BeforeControlPlaneUpgradeRequest{}
+
+// BeforeControlPlaneUpgradeResponse is the response of the BeforeControlPlaneUpgrade hook.
+// +kubebuilder:object:root=true
+type BeforeControlPlaneUpgradeResponse struct {
+	metav1.TypeMeta `json:",inline"`
+
+	// CommonRetryResponse contains Status, Message and RetryAfterSeconds fields.
+	CommonRetryResponse `json:",inline"`
+}
+
+// BeforeControlPlaneUpgrade is the hook that will be called after a KubeadmControlPlane.spec.version is upgraded and
+// before the updated version is propagated to the underlying objects.
+func BeforeControlPlaneUpgrade(*BeforeControlPlaneUpgradeRequest, *BeforeControlPlaneUpgradeResponse) {
+}
 
 // AfterControlPlaneUpgradeRequest is the request of the AfterControlPlaneUpgrade hook.
 // +kubebuilder:object:root=true
@@ -231,6 +265,12 @@ func init() {
 			"- The call's request contains the Cluster object, the current Kubernetes version and the Kubernetes version we are upgrading to\n" +
 			"- This is a blocking hook; Runtime Extension implementers can use this hook to execute " +
 			"tasks before the new version is propagated to the control plane",
+	})
+
+	catalogBuilder.RegisterHook(BeforeControlPlaneUpgrade, &runtimecatalog.HookMeta{
+		Tags:        []string{"Lifecycle Hooks"},
+		Summary:     "Cluster API Runtime will call this hook before the control plane is upgraded, in case of in-place upgrade",
+		Description: "",
 	})
 
 	catalogBuilder.RegisterHook(AfterControlPlaneUpgrade, &runtimecatalog.HookMeta{

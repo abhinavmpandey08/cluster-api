@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"time"
 
 	"github.com/blang/semver/v4"
 	"github.com/pkg/errors"
@@ -25,6 +26,7 @@ import (
 
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	"sigs.k8s.io/cluster-api/controlplane/kubeadm/internal"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/collections"
 	"sigs.k8s.io/cluster-api/util/version"
@@ -132,6 +134,21 @@ func (r *KubeadmControlPlaneReconciler) upgradeControlPlane(
 			return r.scaleUpControlPlane(ctx, controlPlane)
 		}
 		return r.scaleDownControlPlane(ctx, controlPlane, machinesRequireUpgrade)
+	case controlplanev1.ExternalUpdateStrategyType:
+		hookRequest := &runtimehooksv1.BeforeControlPlaneUpgradeRequest{
+			Cluster:              controlPlane.Cluster,
+			MachinesToBeUpgraded: machinesRequireUpgrade,
+			KCP:                  controlPlane.KCP,
+		}
+		hookResponse := &runtimehooksv1.BeforeClusterUpgradeResponse{}
+		logger.Info("HERE456 HERE456")
+		defer logger.Info("HERE789 HERE789")
+
+		if err := r.RuntimeClient.CallAllExtensions(ctx, runtimehooksv1.BeforeControlPlaneUpgrade, controlPlane.Cluster, hookRequest, hookResponse); err != nil {
+			logger.Error(err, "External upgrader rejected the update request")
+			return ctrl.Result{RequeueAfter: time.Duration(hookResponse.RetryAfterSeconds) * time.Second}, nil
+		}
+		return ctrl.Result{}, nil
 	default:
 		logger.Info("RolloutStrategy type is not set to RollingUpdateStrategyType, unable to determine the strategy for rolling out machines")
 		return ctrl.Result{}, nil

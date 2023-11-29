@@ -197,6 +197,7 @@ func (c *client) Unregister(extensionConfig *runtimev1.ExtensionConfig) error {
 func (c *client) CallAllExtensions(ctx context.Context, hook runtimecatalog.Hook, forObject metav1.Object, request runtimehooksv1.RequestObject, response runtimehooksv1.ResponseObject) error {
 	hookName := runtimecatalog.HookName(hook)
 	log := ctrl.LoggerFrom(ctx).WithValues("hook", hookName)
+	log.Info("HERE123 HERE123")
 	ctx = ctrl.LoggerInto(ctx, log)
 	gvh, err := c.catalog.GroupVersionHook(hook)
 	if err != nil {

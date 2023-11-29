@@ -274,7 +274,15 @@ func autoConvert_v1alpha4_KubeadmControlPlaneSpec_To_v1beta1_KubeadmControlPlane
 		return err
 	}
 	out.RolloutAfter = (*v1.Time)(unsafe.Pointer(in.RolloutAfter))
-	out.RolloutStrategy = (*v1beta1.RolloutStrategy)(unsafe.Pointer(in.RolloutStrategy))
+	if in.RolloutStrategy != nil {
+		in, out := &in.RolloutStrategy, &out.RolloutStrategy
+		*out = new(v1beta1.RolloutStrategy)
+		if err := Convert_v1alpha4_RolloutStrategy_To_v1beta1_RolloutStrategy(*in, *out, s); err != nil {
+			return err
+		}
+	} else {
+		out.RolloutStrategy = nil
+	}
 	return nil
 }
 
@@ -294,7 +302,15 @@ func autoConvert_v1beta1_KubeadmControlPlaneSpec_To_v1alpha4_KubeadmControlPlane
 	}
 	// WARNING: in.RolloutBefore requires manual conversion: does not exist in peer-type
 	out.RolloutAfter = (*v1.Time)(unsafe.Pointer(in.RolloutAfter))
-	out.RolloutStrategy = (*RolloutStrategy)(unsafe.Pointer(in.RolloutStrategy))
+	if in.RolloutStrategy != nil {
+		in, out := &in.RolloutStrategy, &out.RolloutStrategy
+		*out = new(RolloutStrategy)
+		if err := Convert_v1beta1_RolloutStrategy_To_v1alpha4_RolloutStrategy(*in, *out, s); err != nil {
+			return err
+		}
+	} else {
+		out.RolloutStrategy = nil
+	}
 	// WARNING: in.RemediationStrategy requires manual conversion: does not exist in peer-type
 	return nil
 }
@@ -503,6 +519,7 @@ func Convert_v1alpha4_RolloutStrategy_To_v1beta1_RolloutStrategy(in *RolloutStra
 func autoConvert_v1beta1_RolloutStrategy_To_v1alpha4_RolloutStrategy(in *v1beta1.RolloutStrategy, out *RolloutStrategy, s conversion.Scope) error {
 	out.Type = RolloutStrategyType(in.Type)
 	out.RollingUpdate = (*RollingUpdate)(unsafe.Pointer(in.RollingUpdate))
+	// WARNING: in.ExternalUpdate requires manual conversion: does not exist in peer-type
 	return nil
 }
 

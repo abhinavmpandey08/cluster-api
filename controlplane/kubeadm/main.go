@@ -53,12 +53,17 @@ import (
 	kubeadmcontrolplanecontrollers "sigs.k8s.io/cluster-api/controlplane/kubeadm/controllers"
 	"sigs.k8s.io/cluster-api/controlplane/kubeadm/internal/etcd"
 	kcpwebhooks "sigs.k8s.io/cluster-api/controlplane/kubeadm/webhooks"
+	runtimecatalog "sigs.k8s.io/cluster-api/exp/runtime/catalog"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/feature"
+	runtimeclient "sigs.k8s.io/cluster-api/internal/runtime/client"
+	runtimeregistry "sigs.k8s.io/cluster-api/internal/runtime/registry"
 	"sigs.k8s.io/cluster-api/util/flags"
 	"sigs.k8s.io/cluster-api/version"
 )
 
 var (
+	catalog        = runtimecatalog.New()
 	scheme         = runtime.NewScheme()
 	setupLog       = ctrl.Log.WithName("setup")
 	controllerName = "cluster-api-kubeadm-control-plane-manager"
@@ -95,6 +100,9 @@ func init() {
 	_ = controlplanev1.AddToScheme(scheme)
 	_ = bootstrapv1.AddToScheme(scheme)
 	_ = apiextensionsv1.AddToScheme(scheme)
+
+	// Register the RuntimeHook types into the catalog.
+	_ = runtimehooksv1.AddToCatalog(catalog)
 }
 
 // InitFlags initializes the flags.
@@ -328,10 +336,21 @@ func setupReconcilers(ctx context.Context, mgr ctrl.Manager) {
 		os.Exit(1)
 	}
 
+	var runtimeClient runtimeclient.Client
+	if feature.Gates.Enabled(feature.RuntimeSDK) {
+		// This is the creation of the runtimeClient for the controllers, embedding a shared catalog and registry instance.
+		runtimeClient = runtimeclient.New(runtimeclient.Options{
+			Catalog:  catalog,
+			Registry: runtimeregistry.New(),
+			Client:   mgr.GetClient(),
+		})
+	}
+
 	if err := (&kubeadmcontrolplanecontrollers.KubeadmControlPlaneReconciler{
 		Client:              mgr.GetClient(),
 		SecretCachingClient: secretCachingClient,
 		Tracker:             tracker,
+		RuntimeClient:       runtimeClient,
 		WatchFilterValue:    watchFilterValue,
 		EtcdDialTimeout:     etcdDialTimeout,
 		EtcdCallTimeout:     etcdCallTimeout,
